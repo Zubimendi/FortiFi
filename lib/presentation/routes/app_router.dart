@@ -8,6 +8,7 @@ import '../security/screens/security_screen.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../expense/screens/new_expense_screen.dart';
 import '../insights/screens/insights_screen.dart';
+import '../analytics/screens/category_analysis_screen.dart';
 import '../settings/screens/settings_screen.dart';
 import '../budget/screens/budget_screen.dart';
 
@@ -81,6 +82,11 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.analytics,
       name: 'analytics',
       builder: (context, state) => const InsightsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.categoryAnalysis,
+      name: 'category-analysis',
+      builder: (context, state) => const CategoryAnalysisScreen(),
     ),
     GoRoute(
       path: RouteNames.settings,

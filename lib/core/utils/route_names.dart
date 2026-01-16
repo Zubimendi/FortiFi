@@ -13,6 +13,7 @@ class RouteNames {
   static const String dashboard = '/dashboard';
   static const String addExpense = '/add-expense';
   static const String analytics = '/analytics';
+  static const String categoryAnalysis = '/category-analysis';
   static const String settings = '/settings';
   static const String budget = '/budget';
 }

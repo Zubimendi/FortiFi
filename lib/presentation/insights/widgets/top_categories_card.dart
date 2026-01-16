@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/route_names.dart';
 
 /// Top categories card with donut chart
 class TopCategoriesCard extends StatelessWidget {
@@ -28,9 +30,21 @@ class TopCategoriesCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Top Categories',
-              style: AppTextStyles.heading.copyWith(fontSize: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Top Categories',
+                  style: AppTextStyles.heading.copyWith(fontSize: 18),
+                ),
+                TextButton(
+                  onPressed: () => context.push(RouteNames.categoryAnalysis),
+                  child: Text(
+                    'View All',
+                    style: AppTextStyles.link.copyWith(fontSize: 14),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Row(
