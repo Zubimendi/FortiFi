@@ -6,6 +6,9 @@ class AppConstants {
   static const String appName = 'FortiFi';
   static const String appTagline = 'Personal Finance Guardian';
   
+  // User information (TODO: Get from user data/state)
+  static const String userName = 'Alex Sterling';
+  
   // Security
   static const String encryptionBadge = 'MILITARY GRADE ENCRYPTION';
   

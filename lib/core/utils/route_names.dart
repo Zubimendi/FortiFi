@@ -9,9 +9,10 @@ class RouteNames {
   static const String masterPasswordSetup = '/master-password-setup';
   static const String login = '/login';
   
-  // Main app routes (to be implemented)
+  // Main app routes
   static const String dashboard = '/dashboard';
   static const String addExpense = '/add-expense';
   static const String analytics = '/analytics';
   static const String settings = '/settings';
+  static const String budget = '/budget';
 }

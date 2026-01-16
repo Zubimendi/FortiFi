@@ -43,6 +43,9 @@ dependencies:
   
   # Typography
   google_fonts: ^6.1.0
+  
+  # Charts
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

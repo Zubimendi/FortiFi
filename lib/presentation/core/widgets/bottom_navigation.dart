@@ -19,22 +19,23 @@ class AppBottomNavigation extends StatelessWidget {
         context.go(RouteNames.dashboard);
         break;
       case 1:
-        // TODO: Navigate to budget screen
+        context.go(RouteNames.budget);
         break;
       case 2:
-        // TODO: Navigate to insights screen
+        context.go(RouteNames.analytics);
         break;
       case 3:
-        // TODO: Navigate to profile screen
+        context.go(RouteNames.settings);
         break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: isDark ? AppColors.cardBackground : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -62,6 +63,8 @@ class AppBottomNavigation extends StatelessWidget {
                 label: 'Budget',
                 index: 1,
               ),
+              // Floating Action Button for Add Expense
+              _buildFAB(context),
               _buildNavItem(
                 context,
                 icon: Icons.insights,
@@ -70,12 +73,38 @@ class AppBottomNavigation extends StatelessWidget {
               ),
               _buildNavItem(
                 context,
-                icon: Icons.person,
-                label: 'Profile',
+                icon: Icons.settings,
+                label: 'Menu',
                 index: 3,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAB(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(RouteNames.addExpense),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.primaryBlue,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryBlue.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add,
+          color: AppColors.textPrimary,
+          size: 28,
         ),
       ),
     );
@@ -87,7 +116,12 @@ class AppBottomNavigation extends StatelessWidget {
     required String label,
     required int index,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = currentIndex == index;
+    final unselectedColor = isDark
+        ? AppColors.textSecondary
+        : Colors.grey.shade600;
+
     return Expanded(
       child: InkWell(
         onTap: () => _onItemTapped(context, index),
@@ -96,14 +130,14 @@ class AppBottomNavigation extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+              color: isSelected ? AppColors.primaryBlue : unselectedColor,
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: AppTextStyles.bodySecondary.copyWith(
-                color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+                color: isSelected ? AppColors.primaryBlue : unselectedColor,
                 fontSize: 12,
               ),
             ),

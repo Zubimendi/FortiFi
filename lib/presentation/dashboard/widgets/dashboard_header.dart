@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/constants/app_constants.dart';
 
 /// Dashboard header with date, greeting, and notifications
 class DashboardHeader extends StatelessWidget {
@@ -60,7 +61,7 @@ class DashboardHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_getGreeting()}, Alex',
+                  '${_getGreeting()}, ${AppConstants.userName.split(' ').first}',
                   style: AppTextStyles.heading.copyWith(fontSize: 24),
                 ),
               ],
