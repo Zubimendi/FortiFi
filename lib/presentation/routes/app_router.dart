@@ -11,6 +11,8 @@ import '../insights/screens/insights_screen.dart';
 import '../analytics/screens/category_analysis_screen.dart';
 import '../settings/screens/settings_screen.dart';
 import '../budget/screens/budget_screen.dart';
+import '../notifications/screens/notifications_screen.dart';
+import '../auth/screens/login_screen.dart';
 
 /// App router configuration using go_router
 final GoRouter appRouter = GoRouter(
@@ -69,6 +71,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const SecurityScreen(),
     ),
     GoRoute(
+      path: RouteNames.login,
+      name: 'login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
       path: RouteNames.dashboard,
       name: 'dashboard',
       builder: (context, state) => const DashboardScreen(),
@@ -97,6 +104,11 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.budget,
       name: 'budget',
       builder: (context, state) => const BudgetScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.notifications,
+      name: 'notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
     // Additional routes will be added as screens are implemented
     // GoRoute(

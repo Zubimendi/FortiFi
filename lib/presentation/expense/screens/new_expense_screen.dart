@@ -23,6 +23,7 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
   int? _selectedCategoryId;
   String _selectedCategoryName = 'Dining';
   final TextEditingController _descriptionController = TextEditingController();
+  String? _receiptImagePath;
 
   void _onKeypadInput(String value) {
     setState(() {
@@ -88,14 +89,15 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
     }
 
     final expenseNotifier = ref.read(expenseListProvider.notifier);
-    final success = await expenseNotifier.addExpense(
-      amount: amount,
-      categoryId: _selectedCategoryId,
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      date: DateTime.now(),
-    );
+      final success = await expenseNotifier.addExpense(
+        amount: amount,
+        categoryId: _selectedCategoryId,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        date: DateTime.now(),
+        receiptPath: _receiptImagePath,
+      );
 
     if (success && mounted) {
       context.pop();
@@ -177,7 +179,14 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
                   ),
                   const SizedBox(height: 32),
                   // Description Input
-                  DescriptionInput(controller: _descriptionController),
+                  DescriptionInput(
+                    controller: _descriptionController,
+                    onImageSelected: (path) {
+                      setState(() {
+                        _receiptImagePath = path;
+                      });
+                    },
+                  ),
                   const SizedBox(height: 32),
                   // Save Button
                   SizedBox(

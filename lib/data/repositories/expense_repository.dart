@@ -39,7 +39,7 @@ class ExpenseRepository {
         date: date,
         paymentMethod: paymentMethod,
         receiptPath: receiptPath,
-        tags: tags != null ? tags.join(',') : null,
+        tags: tags?.join(','),
         createdAt: now,
         updatedAt: now,
       );

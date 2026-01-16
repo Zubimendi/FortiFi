@@ -41,6 +41,17 @@ class DatabaseHelper {
       )
     ''');
 
+    // User Profile Table
+    await db.execute('''
+      CREATE TABLE user_profile (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        profile_picture_path TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
     // Categories Table
     await db.execute('''
       CREATE TABLE categories (

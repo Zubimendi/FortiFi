@@ -4,7 +4,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/providers/expense_provider.dart';
 import '../../../core/providers/category_provider.dart';
-import '../../../data/models/category_model.dart';
 import 'transaction_item_new.dart';
 
 /// Recent transactions section
@@ -18,8 +17,9 @@ class RecentTransactionsSectionNew extends ConsumerWidget {
     final expenseRepo = ref.watch(expenseRepositoryProvider);
     final categoryRepo = ref.watch(categoryRepositoryProvider);
 
-    // Load expenses if not loaded
-    if (expenseState.expenses.isEmpty && !expenseState.isLoading) {
+    // Load expenses once on first build
+    final hasLoaded = ref.read(expenseListProvider).expenses.isNotEmpty;
+    if (!hasLoaded && !expenseState.isLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         expenseNotifier.loadExpenses();
       });

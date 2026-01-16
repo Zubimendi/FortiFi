@@ -16,4 +16,5 @@ class RouteNames {
   static const String categoryAnalysis = '/category-analysis';
   static const String settings = '/settings';
   static const String budget = '/budget';
+  static const String notifications = '/notifications';
 }

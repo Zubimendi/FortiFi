@@ -263,4 +263,30 @@ class AuthService {
       return false;
     }
   }
+
+  /// Reset master password (WARNING: This deletes all encrypted data)
+  /// This method clears all encrypted expenses, budgets, and resets the master password
+  Future<bool> resetMasterPassword() async {
+    try {
+      final db = await _dbHelper.database;
+      
+      // Delete all encrypted data
+      await db.delete('expenses');
+      await db.delete('budgets');
+      await db.delete('recurring_expenses');
+      await db.delete('analytics_cache');
+      
+      // Delete app settings (which contains the master password hash)
+      await db.delete('app_settings');
+      
+      // Note: We keep categories and user_profile as they're not encrypted
+      // User can optionally clear these separately if needed
+      
+      Logger.info('Master password reset - all encrypted data cleared');
+      return true;
+    } catch (e) {
+      Logger.error('Failed to reset master password', e);
+      return false;
+    }
+  }
 }

@@ -24,10 +24,19 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   @override
   void initState() {
     super.initState();
-    // Check if biometric is available
+    // Check if master password already exists
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkExistingPassword();
       _checkBiometricAvailability();
     });
+  }
+
+  Future<void> _checkExistingPassword() async {
+    final authState = ref.read(authProvider);
+    // If master password already exists, redirect to login
+    if (authState.hasMasterPassword && mounted) {
+      context.go(RouteNames.login);
+    }
   }
 
   @override

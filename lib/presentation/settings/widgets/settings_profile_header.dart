@@ -41,9 +41,10 @@ class SettingsProfileHeader extends StatelessWidget {
           const SizedBox(height: 4),
           // Account Type
           Text(
-            'Premium Account',
+            'Personal Account',
             style: AppTextStyles.bodySecondary.copyWith(
               fontSize: 14,
+              color: isDark ? AppColors.textSecondary : Colors.grey.shade700,
             ),
           ),
         ],

@@ -15,14 +15,8 @@ class OnboardingCtaSection extends StatelessWidget {
   }
 
   void _handleSignIn(BuildContext context) {
-    // Navigate to login screen (to be implemented)
-    // For now, just show a placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sign In - Login screen coming soon'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    // Navigate to login screen
+    context.push(RouteNames.login);
   }
 
   @override

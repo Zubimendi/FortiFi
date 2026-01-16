@@ -7,7 +7,6 @@ import '../widgets/spending_trend_card.dart';
 import '../widgets/top_categories_card.dart';
 import '../widgets/summary_cards.dart';
 import '../../core/widgets/bottom_navigation.dart';
-import '../../../core/theme/app_colors.dart';
 
 /// Spending insights screen with analytics and charts
 class InsightsScreen extends ConsumerStatefulWidget {
