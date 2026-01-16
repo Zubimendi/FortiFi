@@ -6,8 +6,6 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/route_names.dart';
 import '../../../core/providers/budget_provider.dart';
 import '../../../core/providers/category_provider.dart';
-import '../../../data/models/budget_model.dart';
-import '../../../data/models/category_model.dart';
 import 'budget_grid_card.dart';
 
 /// Monthly budgets section with grid layout

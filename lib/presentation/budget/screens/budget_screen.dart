@@ -8,8 +8,6 @@ import '../../core/widgets/bottom_navigation.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/budget_provider.dart';
 import '../../../core/providers/category_provider.dart';
-import '../../../data/models/budget_model.dart';
-import '../../../data/models/category_model.dart';
 
 /// Budget Limits screen showing active budgets
 class BudgetScreen extends ConsumerWidget {
@@ -72,7 +70,6 @@ class BudgetScreen extends ConsumerWidget {
     final budgetState = ref.watch(budgetListProvider);
     final budgetNotifier = ref.read(budgetListProvider.notifier);
     final categoryState = ref.watch(categoryListProvider);
-    final budgetRepo = ref.watch(budgetRepositoryProvider);
 
     // Load active budgets if not loaded
     if (budgetState.budgets.isEmpty && !budgetState.isLoading) {
@@ -147,7 +144,6 @@ class BudgetScreen extends ConsumerWidget {
 
                             final spent = status['spent'] as double;
                             final limit = status['budget'] as double;
-                            final percentUsed = status['percentUsed'] as double;
 
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 16),
