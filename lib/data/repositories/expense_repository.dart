@@ -61,7 +61,8 @@ class ExpenseRepository {
   }) async {
     try {
       if (!_encryption.isInitialized) {
-        throw Exception('Encryption not initialized');
+        Logger.info('Encryption not initialized, returning empty list');
+        return [];
       }
 
       final db = await _dbHelper.database;
@@ -97,7 +98,7 @@ class ExpenseRepository {
       return maps.map((map) => ExpenseModel.fromMap(map)).toList();
     } catch (e) {
       Logger.error('Failed to get expenses', e);
-      rethrow;
+      return []; // Return empty list instead of rethrowing to prevent infinite loading
     }
   }
 
@@ -223,7 +224,8 @@ class ExpenseRepository {
   }) async {
     try {
       if (!_encryption.isInitialized) {
-        throw Exception('Encryption not initialized');
+        Logger.info('Encryption not initialized, returning 0.0');
+        return 0.0;
       }
 
       final expenses = await getAllExpenses(
@@ -232,15 +234,24 @@ class ExpenseRepository {
         categoryId: categoryId,
       );
 
+      if (expenses.isEmpty) {
+        return 0.0;
+      }
+
       double total = 0.0;
       for (final expense in expenses) {
-        total += decryptAmount(expense);
+        try {
+          total += decryptAmount(expense);
+        } catch (e) {
+          Logger.info('Failed to decrypt expense amount, skipping');
+          // Continue with other expenses
+        }
       }
 
       return total;
     } catch (e) {
       Logger.error('Failed to get total spending', e);
-      rethrow;
+      return 0.0; // Return 0 instead of rethrowing
     }
   }
 }

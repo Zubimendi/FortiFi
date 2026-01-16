@@ -4,6 +4,58 @@ import '../../data/repositories/category_repository.dart';
 import 'expense_provider.dart';
 import 'category_provider.dart';
 
+/// Date range parameter for analytics providers
+class AnalyticsDateRange {
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  const AnalyticsDateRange({
+    this.startDate,
+    this.endDate,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnalyticsDateRange &&
+          runtimeType == other.runtimeType &&
+          startDate?.millisecondsSinceEpoch == other.startDate?.millisecondsSinceEpoch &&
+          endDate?.millisecondsSinceEpoch == other.endDate?.millisecondsSinceEpoch;
+
+  @override
+  int get hashCode =>
+      (startDate?.millisecondsSinceEpoch.hashCode ?? 0) ^
+      (endDate?.millisecondsSinceEpoch.hashCode ?? 0);
+}
+
+/// Spending trend parameters
+class SpendingTrendParams {
+  final DateTime startDate;
+  final DateTime endDate;
+  final String groupBy;
+
+  const SpendingTrendParams({
+    required this.startDate,
+    required this.endDate,
+    this.groupBy = 'day',
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SpendingTrendParams &&
+          runtimeType == other.runtimeType &&
+          startDate.millisecondsSinceEpoch == other.startDate.millisecondsSinceEpoch &&
+          endDate.millisecondsSinceEpoch == other.endDate.millisecondsSinceEpoch &&
+          groupBy == other.groupBy;
+
+  @override
+  int get hashCode =>
+      startDate.millisecondsSinceEpoch.hashCode ^
+      endDate.millisecondsSinceEpoch.hashCode ^
+      groupBy.hashCode;
+}
+
 /// Provider for analytics calculations
 final analyticsProvider = Provider<AnalyticsService>((ref) {
   final expenseRepo = ref.watch(expenseRepositoryProvider);
@@ -29,13 +81,22 @@ class AnalyticsService {
         endDate: endDate,
       );
 
+      if (expenses.isEmpty) {
+        return {};
+      }
+
       final Map<int, double> categorySpending = {};
 
       for (final expense in expenses) {
         if (expense.categoryId != null) {
-          final amount = _expenseRepository.decryptAmount(expense);
-          categorySpending[expense.categoryId!] =
-              (categorySpending[expense.categoryId] ?? 0.0) + amount;
+          try {
+            final amount = _expenseRepository.decryptAmount(expense);
+            categorySpending[expense.categoryId!] =
+                (categorySpending[expense.categoryId] ?? 0.0) + amount;
+          } catch (e) {
+            // Skip expenses that can't be decrypted
+            continue;
+          }
         }
       }
 
@@ -98,29 +159,42 @@ class AnalyticsService {
         endDate: endDate,
       );
 
+      if (expenses.isEmpty) {
+        return [];
+      }
+
       final Map<String, double> trend = {};
 
       for (final expense in expenses) {
-        String key;
-        final date = expense.date;
+        try {
+          String key;
+          final date = expense.date;
 
-        switch (groupBy) {
-          case 'week':
-            // Get week number
-            final weekStart = date.subtract(Duration(days: date.weekday - 1));
-            key = '${weekStart.year}-W${_getWeekNumber(weekStart)}';
-            break;
-          case 'month':
-            key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
-            break;
-          case 'day':
-          default:
-            key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-            break;
+          switch (groupBy) {
+            case 'week':
+              // Get week number
+              final weekStart = date.subtract(Duration(days: date.weekday - 1));
+              key = '${weekStart.year}-W${_getWeekNumber(weekStart)}';
+              break;
+            case 'month':
+              key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+              break;
+            case 'day':
+            default:
+              key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              break;
+          }
+
+          final amount = _expenseRepository.decryptAmount(expense);
+          trend[key] = (trend[key] ?? 0.0) + amount;
+        } catch (e) {
+          // Skip expenses that can't be decrypted
+          continue;
         }
+      }
 
-        final amount = _expenseRepository.decryptAmount(expense);
-        trend[key] = (trend[key] ?? 0.0) + amount;
+      if (trend.isEmpty) {
+        return [];
       }
 
       // Convert to list and sort by date
@@ -235,21 +309,21 @@ class AnalyticsService {
 }
 
 /// Provider for category breakdown
-final categoryBreakdownProvider = FutureProvider.family<List<Map<String, dynamic>>, Map<String, DateTime?>>((ref, params) async {
+final categoryBreakdownProvider = FutureProvider.family<List<Map<String, dynamic>>, AnalyticsDateRange>((ref, dateRange) async {
   final analytics = ref.watch(analyticsProvider);
   return await analytics.getCategoryBreakdown(
-    startDate: params['startDate'],
-    endDate: params['endDate'],
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   );
 });
 
 /// Provider for spending trend
-final spendingTrendProvider = FutureProvider.family<List<Map<String, dynamic>>, Map<String, dynamic>>((ref, params) async {
+final spendingTrendProvider = FutureProvider.family<List<Map<String, dynamic>>, SpendingTrendParams>((ref, params) async {
   final analytics = ref.watch(analyticsProvider);
   return await analytics.getSpendingTrend(
-    startDate: params['startDate'] as DateTime,
-    endDate: params['endDate'] as DateTime,
-    groupBy: params['groupBy'] as String? ?? 'day',
+    startDate: params.startDate,
+    endDate: params.endDate,
+    groupBy: params.groupBy,
   );
 });
 

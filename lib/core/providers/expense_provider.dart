@@ -2,6 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/expense_repository.dart';
 import '../../data/models/expense_model.dart';
 
+/// Date range parameter for providers
+class DateRange {
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  const DateRange({
+    this.startDate,
+    this.endDate,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DateRange &&
+          runtimeType == other.runtimeType &&
+          startDate?.millisecondsSinceEpoch == other.startDate?.millisecondsSinceEpoch &&
+          endDate?.millisecondsSinceEpoch == other.endDate?.millisecondsSinceEpoch;
+
+  @override
+  int get hashCode =>
+      (startDate?.millisecondsSinceEpoch.hashCode ?? 0) ^
+      (endDate?.millisecondsSinceEpoch.hashCode ?? 0);
+}
+
 /// Provider for expense repository
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository();
@@ -199,5 +223,14 @@ final totalSpendingThisMonthProvider = FutureProvider<double>((ref) async {
   return await repository.getTotalSpending(
     startDate: startOfMonth,
     endDate: endOfMonth,
+  );
+});
+
+/// Provider family for total spending by date range
+final totalSpendingProvider = FutureProvider.family<double, DateRange>((ref, dateRange) async {
+  final repository = ref.watch(expenseRepositoryProvider);
+  return await repository.getTotalSpending(
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   );
 });

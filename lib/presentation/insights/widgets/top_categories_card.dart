@@ -38,10 +38,10 @@ class TopCategoriesCard extends ConsumerWidget {
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
     
     final breakdownAsync = ref.watch(
-      categoryBreakdownProvider({
-        'startDate': startOfMonth,
-        'endDate': endOfMonth,
-      }),
+      categoryBreakdownProvider(AnalyticsDateRange(
+        startDate: startOfMonth,
+        endDate: endOfMonth,
+      )),
     );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;

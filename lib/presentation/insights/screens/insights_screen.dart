@@ -53,7 +53,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               const TopCategoriesCard(),
               const SizedBox(height: 24),
               // Summary Cards
-              const SummaryCards(),
+              SummaryCards(period: _selectedPeriod),
               const SizedBox(height: 24),
             ],
           ),

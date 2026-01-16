@@ -71,13 +71,10 @@ class TotalSpendingDisplay extends ConsumerWidget {
     final endDate = _getEndDate(period);
     
     final totalSpendingAsync = ref.watch(
-      FutureProvider<double>((ref) async {
-        final repo = ref.watch(expenseRepositoryProvider);
-        return await repo.getTotalSpending(
-          startDate: startDate,
-          endDate: endDate,
-        );
-      }),
+      totalSpendingProvider(DateRange(
+        startDate: startDate,
+        endDate: endDate,
+      )),
     );
 
     return totalSpendingAsync.when(

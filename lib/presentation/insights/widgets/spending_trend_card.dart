@@ -19,24 +19,21 @@ class SpendingTrendCard extends ConsumerWidget {
     
     // Get spending trend for current month (weekly grouping)
     final trendAsync = ref.watch(
-      spendingTrendProvider({
-        'startDate': startOfMonth,
-        'endDate': endOfMonth,
-        'groupBy': 'week',
-      }),
+      spendingTrendProvider(SpendingTrendParams(
+        startDate: startOfMonth,
+        endDate: endOfMonth,
+        groupBy: 'week',
+      )),
     );
 
     // Get last month for comparison
     final lastMonth = DateTime(now.year, now.month - 1, 1);
     final lastMonthEnd = DateTime(now.year, now.month, 0);
     final lastMonthTotalAsync = ref.watch(
-      FutureProvider<double>((ref) async {
-        final repo = ref.watch(expenseRepositoryProvider);
-        return await repo.getTotalSpending(
-          startDate: lastMonth,
-          endDate: lastMonthEnd,
-        );
-      }),
+      totalSpendingProvider(DateRange(
+        startDate: lastMonth,
+        endDate: lastMonthEnd,
+      )),
     );
 
     return trendAsync.when(
