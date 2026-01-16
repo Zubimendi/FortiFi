@@ -133,6 +133,7 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
                   CategorySelector(
                     selectedCategory: _selectedCategory,
                     onCategorySelected: _onCategorySelected,
+                    amount: _amount,
                   ),
                   const SizedBox(height: 32),
                   // Description Input
