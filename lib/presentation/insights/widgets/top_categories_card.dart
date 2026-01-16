@@ -6,10 +6,16 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/route_names.dart';
 import '../../../core/providers/analytics_provider.dart';
+import 'time_period_selector.dart';
 
 /// Top categories card with donut chart
 class TopCategoriesCard extends ConsumerWidget {
-  const TopCategoriesCard({super.key});
+  final TimePeriod period;
+
+  const TopCategoriesCard({
+    super.key,
+    required this.period,
+  });
 
   Color _getCategoryColor(String categoryName) {
     switch (categoryName.toLowerCase()) {
@@ -31,16 +37,40 @@ class TopCategoriesCard extends ConsumerWidget {
     }
   }
 
+  DateTime _getStartDate(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.week:
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        return DateTime(weekStart.year, weekStart.month, weekStart.day);
+      case TimePeriod.month:
+        return DateTime(now.year, now.month, 1);
+      case TimePeriod.year:
+        return DateTime(now.year, 1, 1);
+    }
+  }
+
+  DateTime _getEndDate(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.week:
+        return DateTime(now.year, now.month, now.day);
+      case TimePeriod.month:
+        return DateTime(now.year, now.month + 1, 0);
+      case TimePeriod.year:
+        return DateTime(now.year, 12, 31);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    final startDate = _getStartDate(period);
+    final endDate = _getEndDate(period);
     
     final breakdownAsync = ref.watch(
       categoryBreakdownProvider(AnalyticsDateRange(
-        startDate: startOfMonth,
-        endDate: endOfMonth,
+        startDate: startDate,
+        endDate: endDate,
       )),
     );
 

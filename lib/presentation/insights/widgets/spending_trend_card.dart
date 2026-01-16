@@ -5,48 +5,106 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/providers/analytics_provider.dart';
 import '../../../core/providers/expense_provider.dart';
+import 'time_period_selector.dart';
 
 /// Spending trend card with line graph
 class SpendingTrendCard extends ConsumerWidget {
-  const SpendingTrendCard({super.key});
+  final TimePeriod period;
+
+  const SpendingTrendCard({
+    super.key,
+    required this.period,
+  });
+
+  DateTime _getStartDate(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.week:
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        return DateTime(weekStart.year, weekStart.month, weekStart.day);
+      case TimePeriod.month:
+        return DateTime(now.year, now.month, 1);
+      case TimePeriod.year:
+        return DateTime(now.year, 1, 1);
+    }
+  }
+
+  DateTime _getEndDate(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.week:
+        return DateTime(now.year, now.month, now.day);
+      case TimePeriod.month:
+        return DateTime(now.year, now.month + 1, 0);
+      case TimePeriod.year:
+        return DateTime(now.year, 12, 31);
+    }
+  }
+
+  String _getGroupBy(TimePeriod period) {
+    switch (period) {
+      case TimePeriod.week:
+        return 'day';
+      case TimePeriod.month:
+        return 'week';
+      case TimePeriod.year:
+        return 'month';
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    final startDate = _getStartDate(period);
+    final endDate = _getEndDate(period);
+    final groupBy = _getGroupBy(period);
     
-    // Get spending trend for current month (weekly grouping)
+    // Get spending trend
     final trendAsync = ref.watch(
       spendingTrendProvider(SpendingTrendParams(
-        startDate: startOfMonth,
-        endDate: endOfMonth,
-        groupBy: 'week',
+        startDate: startDate,
+        endDate: endDate,
+        groupBy: groupBy,
       )),
     );
 
-    // Get last month for comparison
-    final lastMonth = DateTime(now.year, now.month - 1, 1);
-    final lastMonthEnd = DateTime(now.year, now.month, 0);
-    final lastMonthTotalAsync = ref.watch(
+    // Get previous period for comparison
+    final now = DateTime.now();
+    DateTime lastPeriodStart;
+    DateTime lastPeriodEnd;
+    switch (period) {
+      case TimePeriod.week:
+        final lastWeekStart = startDate.subtract(const Duration(days: 7));
+        lastPeriodStart = DateTime(lastWeekStart.year, lastWeekStart.month, lastWeekStart.day);
+        lastPeriodEnd = startDate.subtract(const Duration(days: 1));
+        break;
+      case TimePeriod.month:
+        lastPeriodStart = DateTime(now.year, now.month - 1, 1);
+        lastPeriodEnd = DateTime(now.year, now.month, 0);
+        break;
+      case TimePeriod.year:
+        lastPeriodStart = DateTime(now.year - 1, 1, 1);
+        lastPeriodEnd = DateTime(now.year - 1, 12, 31);
+        break;
+    }
+    final lastPeriodTotalAsync = ref.watch(
       totalSpendingProvider(DateRange(
-        startDate: lastMonth,
-        endDate: lastMonthEnd,
+        startDate: lastPeriodStart,
+        endDate: lastPeriodEnd,
       )),
     );
 
     return trendAsync.when(
       data: (trendData) {
-        return lastMonthTotalAsync.when(
-          data: (lastMonthTotal) {
+        return lastPeriodTotalAsync.when(
+          data: (lastPeriodTotal) {
             final currentTotal = trendData.fold<double>(
               0.0,
               (sum, item) => sum + (item['amount'] as double),
             );
             
-            final percentageChange = lastMonthTotal > 0
-                ? ((currentTotal - lastMonthTotal) / lastMonthTotal * 100)
+            final percentageChange = lastPeriodTotal > 0
+                ? ((currentTotal - lastPeriodTotal) / lastPeriodTotal * 100)
                 : 0.0;
             
             // Convert trend data to FlSpot format
@@ -121,7 +179,7 @@ class SpendingTrendCard extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}% vs last month',
+                              '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}% vs last ${period == TimePeriod.week ? 'week' : period == TimePeriod.month ? 'month' : 'year'}',
                               style: AppTextStyles.bodySecondary.copyWith(
                                 color: percentageChange >= 0
                                     ? Colors.red

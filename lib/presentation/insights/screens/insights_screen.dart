@@ -47,10 +47,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               TotalSpendingDisplay(period: _selectedPeriod),
               const SizedBox(height: 32),
               // Spending Trend Card
-              const SpendingTrendCard(),
+              SpendingTrendCard(period: _selectedPeriod),
               const SizedBox(height: 24),
               // Top Categories Card
-              const TopCategoriesCard(),
+              TopCategoriesCard(period: _selectedPeriod),
               const SizedBox(height: 24),
               // Summary Cards
               SummaryCards(period: _selectedPeriod),

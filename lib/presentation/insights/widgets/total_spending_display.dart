@@ -18,7 +18,9 @@ class TotalSpendingDisplay extends ConsumerWidget {
     final now = DateTime.now();
     switch (period) {
       case TimePeriod.week:
-        return now.subtract(Duration(days: now.weekday - 1));
+        // Get start of current week (Monday)
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        return DateTime(weekStart.year, weekStart.month, weekStart.day);
       case TimePeriod.month:
         return DateTime(now.year, now.month, 1);
       case TimePeriod.year:
@@ -30,7 +32,8 @@ class TotalSpendingDisplay extends ConsumerWidget {
     final now = DateTime.now();
     switch (period) {
       case TimePeriod.week:
-        return now;
+        // Get end of current week (today, normalized to start of day)
+        return DateTime(now.year, now.month, now.day);
       case TimePeriod.month:
         return DateTime(now.year, now.month + 1, 0);
       case TimePeriod.year:
