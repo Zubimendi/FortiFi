@@ -12,7 +12,6 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/expense_provider.dart';
 import '../../../core/providers/category_provider.dart';
 import '../../../core/providers/budget_provider.dart';
-import '../../../data/services/auth_service.dart';
 import '../../../data/services/export_service.dart';
 import '../../../core/utils/route_names.dart';
 import 'package:share_plus/share_plus.dart';

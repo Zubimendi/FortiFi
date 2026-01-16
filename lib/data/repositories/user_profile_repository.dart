@@ -24,26 +24,32 @@ class UserProfileRepository {
   Future<bool> saveProfile(UserProfileModel profile) async {
     try {
       final db = await _dbHelper.database;
-      final existing = await getProfile();
+      final existing = await db.query('user_profile', limit: 1);
 
-      if (existing == null) {
+      if (existing.isEmpty) {
         // Create new profile
-        await db.insert('user_profile', profile.toMap());
+        final profileMap = profile.toMap();
+        profileMap.remove('updated_at'); // Let database set default
+        await db.insert('user_profile', profileMap);
+        Logger.info('User profile created');
       } else {
-        // Update existing profile
+        // Update existing profile - use the actual ID from database
+        final existingId = existing.first['id'] as int;
+        final updateMap = profile.copyWith(updatedAt: DateTime.now()).toMap();
+        updateMap.remove('created_at'); // Don't update created_at
         await db.update(
           'user_profile',
-          profile.copyWith(updatedAt: DateTime.now()).toMap(),
+          updateMap,
           where: 'id = ?',
-          whereArgs: [1], // Assuming single user
+          whereArgs: [existingId],
         );
+        Logger.info('User profile updated');
       }
 
-      Logger.info('User profile saved');
       return true;
     } catch (e) {
       Logger.error('Failed to save user profile', e);
-      return false;
+      rethrow; // Rethrow to get better error messages
     }
   }
 
@@ -57,7 +63,13 @@ class UserProfileRepository {
         );
       }
 
-      return await saveProfile(profile.copyWith(name: name));
+      // Preserve existing values when updating
+      return await saveProfile(
+        profile.copyWith(
+          name: name,
+          updatedAt: DateTime.now(),
+        ),
+      );
     } catch (e) {
       Logger.error('Failed to update name', e);
       return false;
@@ -77,7 +89,13 @@ class UserProfileRepository {
         );
       }
 
-      return await saveProfile(profile.copyWith(profilePicturePath: imagePath));
+      // Preserve existing values when updating
+      return await saveProfile(
+        profile.copyWith(
+          profilePicturePath: imagePath,
+          updatedAt: DateTime.now(),
+        ),
+      );
     } catch (e) {
       Logger.error('Failed to update profile picture', e);
       return false;

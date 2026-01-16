@@ -21,8 +21,9 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -168,6 +169,29 @@ class DatabaseHelper {
     }
 
     Logger.info('Default categories inserted');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    Logger.info('Upgrading database from version $oldVersion to $newVersion');
+    
+    if (oldVersion < 2) {
+      // Add user_profile table if it doesn't exist
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS user_profile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            profile_picture_path TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        ''');
+        Logger.info('user_profile table created during upgrade');
+      } catch (e) {
+        Logger.error('Failed to create user_profile table during upgrade', e);
+        // If table already exists, that's fine
+      }
+    }
   }
 
   Future<void> close() async {

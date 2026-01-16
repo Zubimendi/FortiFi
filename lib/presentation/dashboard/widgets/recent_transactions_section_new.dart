@@ -7,21 +7,32 @@ import '../../../core/providers/category_provider.dart';
 import 'transaction_item_new.dart';
 
 /// Recent transactions section
-class RecentTransactionsSectionNew extends ConsumerWidget {
+class RecentTransactionsSectionNew extends ConsumerStatefulWidget {
   const RecentTransactionsSectionNew({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final expenseState = ref.watch(expenseListProvider);
-    final expenseNotifier = ref.read(expenseListProvider.notifier);
-    final expenseRepo = ref.watch(expenseRepositoryProvider);
+  ConsumerState<RecentTransactionsSectionNew> createState() => _RecentTransactionsSectionNewState();
+}
 
-    // Load expenses once if not already loaded
-    if (!expenseState.isLoading && expenseState.expenses.isEmpty && expenseState.error == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        expenseNotifier.loadExpenses();
-      });
-    }
+class _RecentTransactionsSectionNewState extends ConsumerState<RecentTransactionsSectionNew> {
+  bool _hasInitiatedLoad = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load expenses once when widget is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_hasInitiatedLoad) {
+        _hasInitiatedLoad = true;
+        ref.read(expenseListProvider.notifier).loadExpenses();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final expenseState = ref.watch(expenseListProvider);
+    final expenseRepo = ref.watch(expenseRepositoryProvider);
 
     // Get recent expenses (last 5)
     final recentExpenses = expenseState.expenses.take(5).toList();

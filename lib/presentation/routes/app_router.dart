@@ -13,6 +13,7 @@ import '../settings/screens/settings_screen.dart';
 import '../budget/screens/budget_screen.dart';
 import '../notifications/screens/notifications_screen.dart';
 import '../auth/screens/login_screen.dart';
+import '../settings/screens/edit_profile_screen.dart';
 
 /// App router configuration using go_router
 final GoRouter appRouter = GoRouter(
@@ -109,6 +110,11 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.notifications,
       name: 'notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.editProfile,
+      name: 'edit-profile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
     // Additional routes will be added as screens are implemented
     // GoRoute(

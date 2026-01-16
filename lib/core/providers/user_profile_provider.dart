@@ -58,10 +58,19 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       final success = await _repository.updateName(name);
       if (success) {
         await loadProfile();
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to update name',
+        );
       }
       return success;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
       return false;
     }
   }
@@ -73,10 +82,19 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       final success = await _repository.updateProfilePicture(imagePath);
       if (success) {
         await loadProfile();
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to update profile picture',
+        );
       }
       return success;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
       return false;
     }
   }

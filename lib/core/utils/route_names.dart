@@ -17,4 +17,5 @@ class RouteNames {
   static const String settings = '/settings';
   static const String budget = '/budget';
   static const String notifications = '/notifications';
+  static const String editProfile = '/edit-profile';
 }

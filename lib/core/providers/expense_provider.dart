@@ -48,8 +48,14 @@ class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
     int? categoryId,
     bool force = false,
   }) async {
-    // Don't reload if already loading or already loaded (unless forced)
-    if (!force && (state.isLoading || (_hasAttemptedLoad && state.expenses.isNotEmpty))) {
+    // Don't reload if already loading (unless forced)
+    if (!force && state.isLoading) {
+      return;
+    }
+
+    // Don't reload if we've already attempted to load and succeeded (unless forced)
+    // Allow reload if there was an error
+    if (!force && _hasAttemptedLoad && state.error == null) {
       return;
     }
 
