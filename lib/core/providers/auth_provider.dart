@@ -82,11 +82,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Set master password (first time setup)
-  Future<bool> setMasterPassword(String password) async {
+  /// Set master password (first time setup or after reset)
+  Future<bool> setMasterPassword(String password, {bool force = false}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final success = await _authService.setMasterPassword(password);
+      final success = await _authService.setMasterPassword(password, force: force);
       if (success) {
         // Initialize encryption with the password
         await _encryptionService.initialize(password);

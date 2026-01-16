@@ -35,9 +35,10 @@ class ExpenseListState {
 /// Expense list notifier
 class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
   final ExpenseRepository _repository;
+  bool _hasAttemptedLoad = false;
 
   ExpenseListNotifier(this._repository) : super(ExpenseListState()) {
-    loadExpenses();
+    // Don't auto-load on initialization - let widgets trigger it
   }
 
   /// Load all expenses
@@ -45,7 +46,14 @@ class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
     DateTime? startDate,
     DateTime? endDate,
     int? categoryId,
+    bool force = false,
   }) async {
+    // Don't reload if already loading or already loaded (unless forced)
+    if (!force && (state.isLoading || (_hasAttemptedLoad && state.expenses.isNotEmpty))) {
+      return;
+    }
+
+    _hasAttemptedLoad = true;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final expenses = await _repository.getAllExpenses(
@@ -86,8 +94,8 @@ class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
         receiptPath: receiptPath,
         tags: tags,
       );
-      // Reload expenses
-      await loadExpenses();
+      // Reload expenses (force reload)
+      await loadExpenses(force: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -121,8 +129,8 @@ class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
         receiptPath: receiptPath,
         tags: tags,
       );
-      // Reload expenses
-      await loadExpenses();
+      // Reload expenses (force reload)
+      await loadExpenses(force: true);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -138,8 +146,8 @@ class ExpenseListNotifier extends StateNotifier<ExpenseListState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _repository.deleteExpense(id);
-      // Reload expenses
-      await loadExpenses();
+      // Reload expenses (force reload)
+      await loadExpenses(force: true);
       return true;
     } catch (e) {
       state = state.copyWith(

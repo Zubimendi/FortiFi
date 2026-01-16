@@ -426,8 +426,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final encryptionService = ref.read(encryptionServiceProvider);
         encryptionService.clear();
 
-        // Clear auth state
+        // Clear auth state and refresh
         ref.read(authProvider.notifier).logout();
+        await ref.read(authProvider.notifier).refresh();
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -442,6 +443,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         // Navigate to security screen to set new password
         if (context.mounted) {
+          // Small delay to ensure state is cleared
+          await Future.delayed(const Duration(milliseconds: 500));
           context.go(RouteNames.masterPasswordSetup);
         }
       } else if (context.mounted) {

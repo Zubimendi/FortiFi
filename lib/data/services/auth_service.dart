@@ -51,17 +51,17 @@ class AuthService {
     }
   }
 
-  /// Set master password (first time setup)
-  Future<bool> setMasterPassword(String password) async {
+  /// Set master password (first time setup or after reset)
+  Future<bool> setMasterPassword(String password, {bool force = false}) async {
     try {
       // Validate password strength
       if (password.length < 12) {
         throw Exception('Password must be at least 12 characters');
       }
 
-      // Check if password already exists
-      if (await hasMasterPassword()) {
-        throw Exception('Master password already set');
+      // Check if password already exists (unless forcing)
+      if (!force && await hasMasterPassword()) {
+        throw Exception('Master password already set. Please reset it first or use the login screen.');
       }
 
       // Generate salt
@@ -70,15 +70,32 @@ class AuthService {
       // Hash password
       final passwordHash = await _hashPassword(password, salt);
 
-      // Store in database
+      // Store in database (update if exists, insert if new)
       final db = await _dbHelper.database;
-      await db.insert('app_settings', {
-        'master_password_hash': passwordHash,
-        'salt': salt,
-        'biometric_enabled': 0,
-        'currency_code': 'USD',
-        'theme_mode': 'system',
-      });
+      final existing = await db.query('app_settings', limit: 1);
+      
+      if (existing.isNotEmpty && force) {
+        // Update existing password
+        await db.update(
+          'app_settings',
+          {
+            'master_password_hash': passwordHash,
+            'salt': salt,
+            'updated_at': DateTime.now().toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [existing.first['id']],
+        );
+      } else {
+        // Insert new password
+        await db.insert('app_settings', {
+          'master_password_hash': passwordHash,
+          'salt': salt,
+          'biometric_enabled': 0,
+          'currency_code': 'USD',
+          'theme_mode': 'system',
+        });
+      }
 
       Logger.info('Master password set successfully');
       return true;

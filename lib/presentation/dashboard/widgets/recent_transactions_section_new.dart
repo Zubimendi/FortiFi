@@ -15,11 +15,9 @@ class RecentTransactionsSectionNew extends ConsumerWidget {
     final expenseState = ref.watch(expenseListProvider);
     final expenseNotifier = ref.read(expenseListProvider.notifier);
     final expenseRepo = ref.watch(expenseRepositoryProvider);
-    final categoryRepo = ref.watch(categoryRepositoryProvider);
 
-    // Load expenses once on first build
-    final hasLoaded = ref.read(expenseListProvider).expenses.isNotEmpty;
-    if (!hasLoaded && !expenseState.isLoading) {
+    // Load expenses once if not already loaded
+    if (!expenseState.isLoading && expenseState.expenses.isEmpty && expenseState.error == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         expenseNotifier.loadExpenses();
       });

@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/route_names.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/user_profile_provider.dart';
 
 /// Security screen for master password setup
 class SecurityScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class SecurityScreen extends ConsumerStatefulWidget {
 
 class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   bool _isFaceIdEnabled = false;
 
   @override
@@ -32,16 +34,32 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   }
 
   Future<void> _checkExistingPassword() async {
+    // Wait a bit for auth state to load
+    await Future.delayed(const Duration(milliseconds: 300));
     final authState = ref.read(authProvider);
-    // If master password already exists, redirect to login
+    // If master password already exists, show a message and redirect to login
     if (authState.hasMasterPassword && mounted) {
-      context.go(RouteNames.login);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Master password already exists. Please login or reset it first.',
+          ),
+          backgroundColor: AppColors.error,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      // Small delay before redirect
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        context.go(RouteNames.login);
+      }
     }
   }
 
   @override
   void dispose() {
     _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -55,7 +73,31 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   }
 
   Future<void> _handleSecureAccount() async {
-    final password = _passwordController.text;
+    final password = _passwordController.text.trim();
+    final name = _nameController.text.trim();
+
+    // Validate name
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your name'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (name.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Name must be at least 2 characters'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Validate password
     if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -77,11 +119,19 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       return;
     }
 
-    // Set master password
+    // Check if we're setting password after reset
+    final authState = ref.read(authProvider);
+    final isAfterReset = !authState.hasMasterPassword;
+    
+    // Set master password (force if after reset)
     final authNotifier = ref.read(authProvider.notifier);
-    final success = await authNotifier.setMasterPassword(password);
+    final success = await authNotifier.setMasterPassword(password, force: isAfterReset);
 
     if (success) {
+      // Save user name to profile
+      final userProfileNotifier = ref.read(userProfileProvider.notifier);
+      await userProfileNotifier.updateName(name);
+
       // Enable biometric if requested
       if (_isFaceIdEnabled) {
         await authNotifier.setBiometricEnabled(true);
@@ -137,10 +187,43 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
               const SizedBox(height: 12),
               // Description
               Text(
-                'Your financial data is encrypted and accessible only by you. Create a master password to get started.',
+                'Your financial data is encrypted and accessible only by you. Create your account to get started.',
                 style: AppTextStyles.bodySecondary,
               ),
               const SizedBox(height: 40),
+              // Name Input
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Name',
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _nameController,
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your name',
+                      hintStyle: AppTextStyles.bodySecondary,
+                      filled: true,
+                      fillColor: AppColors.cardBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               // Master Password Input
               MasterPasswordInput(
                 controller: _passwordController,
