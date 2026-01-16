@@ -7,6 +7,7 @@ import '../widgets/encryption_info_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/route_names.dart';
+import '../../../core/providers/auth_provider.dart';
 
 /// Security screen for master password setup
 class SecurityScreen extends ConsumerStatefulWidget {
@@ -21,12 +22,30 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   bool _isFaceIdEnabled = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Check if biometric is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBiometricAvailability();
+    });
+  }
+
+  @override
   void dispose() {
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleSecureAccount() {
+  Future<void> _checkBiometricAvailability() async {
+    final authState = ref.read(authProvider);
+    if (authState.isBiometricAvailable) {
+      setState(() {
+        _isFaceIdEnabled = authState.isBiometricEnabled;
+      });
+    }
+  }
+
+  Future<void> _handleSecureAccount() async {
     final password = _passwordController.text;
     if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -38,13 +57,49 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       return;
     }
 
-    // TODO: Save master password (encrypted) to secure storage
-    // For now, navigate to dashboard
-    context.go(RouteNames.dashboard);
+    // Validate password strength
+    if (password.length < 12) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must be at least 12 characters'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Set master password
+    final authNotifier = ref.read(authProvider.notifier);
+    final success = await authNotifier.setMasterPassword(password);
+
+    if (success) {
+      // Enable biometric if requested
+      if (_isFaceIdEnabled) {
+        await authNotifier.setBiometricEnabled(true);
+      }
+
+      // Navigate to dashboard
+      if (mounted) {
+        context.go(RouteNames.dashboard);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ref.read(authProvider).error ?? 'Failed to set master password',
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -82,15 +137,16 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                 controller: _passwordController,
               ),
               const SizedBox(height: 32),
-              // Face ID Toggle Card
-              FaceIdToggleCard(
-                isEnabled: _isFaceIdEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _isFaceIdEnabled = value;
-                  });
-                },
-              ),
+              // Face ID Toggle Card (only show if biometric is available)
+              if (authState.isBiometricAvailable)
+                FaceIdToggleCard(
+                  isEnabled: _isFaceIdEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _isFaceIdEnabled = value;
+                    });
+                  },
+                ),
               const SizedBox(height: 24),
               // Encryption Info Card
               const EncryptionInfoCard(),
@@ -115,7 +171,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _handleSecureAccount,
+              onPressed: authState.isLoading ? null : _handleSecureAccount,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 foregroundColor: AppColors.textPrimary,
@@ -124,17 +180,28 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Secure My Account',
-                    style: AppTextStyles.button,
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward, size: 20),
-                ],
-              ),
+              child: authState.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.textPrimary,
+                        ),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Secure My Account',
+                          style: AppTextStyles.button,
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward, size: 20),
+                      ],
+                    ),
             ),
           ),
         ),

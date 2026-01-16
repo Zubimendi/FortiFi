@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/providers/category_provider.dart';
 import 'select_category_modal.dart';
 
 /// Category selector with horizontal scrollable pills
-class CategorySelector extends StatelessWidget {
+class CategorySelector extends ConsumerWidget {
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
   final String? amount;
@@ -16,34 +18,57 @@ class CategorySelector extends StatelessWidget {
     this.amount,
   });
 
-  final List<Map<String, dynamic>> _categories = const [
-    {'name': 'Dining', 'icon': Icons.restaurant},
-    {'name': 'Shopping', 'icon': Icons.shopping_bag},
-    {'name': 'Transportation', 'icon': Icons.directions_car},
-    {'name': 'Groceries', 'icon': Icons.shopping_cart},
-    {'name': 'Entertainment', 'icon': Icons.movie},
-    {'name': 'Bills', 'icon': Icons.receipt},
-    {'name': 'Health', 'icon': Icons.local_hospital},
-    {'name': 'Education', 'icon': Icons.school},
-    {'name': 'Travel', 'icon': Icons.flight},
-    {'name': 'Other', 'icon': Icons.category},
-  ];
-
-  void _showCategoryModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => SelectCategoryModal(
-        amount: amount ?? '0.00',
-        selectedCategory: selectedCategory,
-        onCategorySelected: onCategorySelected,
-      ),
-    );
+  IconData _getIconForCategory(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'dining':
+        return Icons.restaurant;
+      case 'shopping':
+        return Icons.shopping_bag;
+      case 'transport':
+      case 'transportation':
+        return Icons.directions_car;
+      case 'groceries':
+        return Icons.shopping_cart;
+      case 'entertainment':
+      case 'fun':
+        return Icons.movie;
+      case 'bills':
+      case 'utilities':
+        return Icons.receipt;
+      case 'health':
+        return Icons.local_hospital;
+      case 'education':
+        return Icons.school;
+      case 'travel':
+        return Icons.flight;
+      case 'housing':
+      case 'home':
+        return Icons.home;
+      case 'savings':
+        return Icons.savings;
+      default:
+        return Icons.category;
+    }
   }
 
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoryState = ref.watch(categoryListProvider);
+    
+    // Load categories if not loaded
+    if (categoryState.categories.isEmpty && !categoryState.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(categoryListProvider.notifier).loadCategories();
+      });
+    }
+
+    // Get expense categories (limit to 10 for horizontal scroll)
+    final categories = categoryState.categories
+        .where((cat) => cat.type == 'expense')
+        .take(10)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -57,42 +82,57 @@ class CategorySelector extends StatelessWidget {
         const SizedBox(height: 16),
         SizedBox(
           height: 50,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _categories.length + 1, // +1 for "View All" button
-            itemBuilder: (context, index) {
-              if (index == _categories.length) {
-                // "View All" button
-                return Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: _CategoryPill(
-                    name: 'View All',
-                    icon: Icons.grid_view,
-                    isSelected: false,
-                    onTap: () => _showCategoryModal(context),
-                    isViewAll: true,
-                  ),
-                );
-              }
+          child: categoryState.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length + 1, // +1 for "View All" button
+                  itemBuilder: (context, index) {
+                    if (index == categories.length) {
+                      // "View All" button
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: _CategoryPill(
+                          name: 'View All',
+                          icon: Icons.grid_view,
+                          isSelected: false,
+                          onTap: () => _showCategoryModal(context, ref),
+                          isViewAll: true,
+                        ),
+                      );
+                    }
 
-              final category = _categories[index];
-              final isSelected = selectedCategory == category['name'];
-              
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index < _categories.length - 1 ? 12 : 0,
+                    final category = categories[index];
+                    final isSelected = selectedCategory == category.name;
+                    
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: index < categories.length - 1 ? 12 : 0,
+                      ),
+                      child: _CategoryPill(
+                        name: category.name,
+                        icon: _getIconForCategory(category.name),
+                        isSelected: isSelected,
+                        onTap: () => onCategorySelected(category.name),
+                      ),
+                    );
+                  },
                 ),
-                child: _CategoryPill(
-                  name: category['name'] as String,
-                  icon: category['icon'] as IconData,
-                  isSelected: isSelected,
-                  onTap: () => onCategorySelected(category['name'] as String),
-                ),
-              );
-            },
-          ),
         ),
       ],
+    );
+  }
+
+  void _showCategoryModal(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SelectCategoryModal(
+        amount: amount ?? '0.00',
+        selectedCategory: selectedCategory,
+        onCategorySelected: onCategorySelected,
+      ),
     );
   }
 }

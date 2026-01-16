@@ -7,6 +7,8 @@ import '../widgets/description_input.dart';
 import '../widgets/numeric_keypad.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/providers/expense_provider.dart';
+import '../../../core/providers/category_provider.dart';
 
 /// New expense screen for adding expenses
 class NewExpenseScreen extends ConsumerStatefulWidget {
@@ -18,7 +20,8 @@ class NewExpenseScreen extends ConsumerStatefulWidget {
 
 class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
   String _amount = '0.00';
-  String _selectedCategory = 'Dining';
+  int? _selectedCategoryId;
+  String _selectedCategoryName = 'Dining';
   final TextEditingController _descriptionController = TextEditingController();
 
   void _onKeypadInput(String value) {
@@ -50,21 +53,29 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
     });
   }
 
-  void _onCategorySelected(String category) {
+  void _onCategorySelected(String categoryName) {
     setState(() {
-      _selectedCategory = category;
+      _selectedCategoryName = categoryName;
+      // Find category ID from the list
+      final categories = ref.read(categoryListProvider).categories;
+      final category = categories.firstWhere(
+        (cat) => cat.name == categoryName,
+        orElse: () => categories.first,
+      );
+      _selectedCategoryId = category.id;
     });
   }
 
   void _handleReset() {
     setState(() {
       _amount = '0.00';
-      _selectedCategory = 'Dining';
+      _selectedCategoryId = null;
+      _selectedCategoryName = 'Dining';
       _descriptionController.clear();
     });
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     final amount = double.tryParse(_amount);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,15 +87,34 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
       return;
     }
 
-    // TODO: Save expense to database
-    // For now, navigate back
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Expense of \$${amount.toStringAsFixed(2)} saved'),
-        backgroundColor: AppColors.success,
-      ),
+    final expenseNotifier = ref.read(expenseListProvider.notifier);
+    final success = await expenseNotifier.addExpense(
+      amount: amount,
+      categoryId: _selectedCategoryId,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+      date: DateTime.now(),
     );
+
+    if (success && mounted) {
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Expense of \$${amount.toStringAsFixed(2)} saved'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.read(expenseListProvider).error ?? 'Failed to save expense',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -95,6 +125,16 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final expenseState = ref.watch(expenseListProvider);
+    final categoryState = ref.watch(categoryListProvider);
+
+    // Load categories if not loaded
+    if (categoryState.categories.isEmpty && !categoryState.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(categoryListProvider.notifier).loadCategories();
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -131,7 +171,7 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
                   const SizedBox(height: 32),
                   // Category Selector
                   CategorySelector(
-                    selectedCategory: _selectedCategory,
+                    selectedCategory: _selectedCategoryName,
                     onCategorySelected: _onCategorySelected,
                     amount: _amount,
                   ),
@@ -143,7 +183,7 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _handleSave,
+                      onPressed: expenseState.isLoading ? null : _handleSave,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         foregroundColor: AppColors.textPrimary,
@@ -152,17 +192,28 @@ class _NewExpenseScreenState extends ConsumerState<NewExpenseScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Save Expense',
-                            style: AppTextStyles.button,
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.check, size: 20),
-                        ],
-                      ),
+                      child: expenseState.isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.textPrimary,
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Save Expense',
+                                  style: AppTextStyles.button,
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.check, size: 20),
+                              ],
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),

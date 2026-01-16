@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/route_names.dart';
+import '../../../core/providers/expense_provider.dart';
 
 /// New total spent card with month, amount, percentage change, and view insights button
-class TotalSpentCardNew extends StatelessWidget {
+class TotalSpentCardNew extends ConsumerWidget {
   const TotalSpentCardNew({super.key});
 
   String _getCurrentMonth() {
@@ -28,10 +30,54 @@ class TotalSpentCardNew extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const totalSpent = 4250.80;
-    const percentageChange = 2.5;
+    final totalSpendingAsync = ref.watch(totalSpendingThisMonthProvider);
+    
+    // Calculate percentage change (compare with last month)
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1, 1);
+    final lastMonthEnd = DateTime(now.year, now.month, 0);
+    final lastMonthSpendingAsync = ref.watch(
+      FutureProvider<double>((ref) async {
+        final repo = ref.watch(expenseRepositoryProvider);
+        return await repo.getTotalSpending(
+          startDate: lastMonth,
+          endDate: lastMonthEnd,
+        );
+      }),
+    );
+
+    return totalSpendingAsync.when(
+      data: (totalSpent) {
+        return lastMonthSpendingAsync.when(
+          data: (lastMonthSpent) {
+            final percentageChange = lastMonthSpent > 0
+                ? ((totalSpent - lastMonthSpent) / lastMonthSpent * 100)
+                : 0.0;
+            
+            return _buildCard(
+              context,
+              isDark,
+              totalSpent,
+              percentageChange,
+            );
+          },
+          loading: () => _buildCard(context, isDark, totalSpent, 0.0),
+          error: (_, __) => _buildCard(context, isDark, totalSpent, 0.0),
+        );
+      },
+      loading: () => _buildCard(context, isDark, 0.0, 0.0),
+      error: (_, __) => _buildCard(context, isDark, 0.0, 0.0),
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    bool isDark,
+    double totalSpent,
+    double percentageChange,
+  ) {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -57,16 +103,22 @@ class TotalSpentCardNew extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.trending_up,
-                      color: AppColors.success,
+                    Icon(
+                      percentageChange >= 0
+                          ? Icons.trending_up
+                          : Icons.trending_down,
+                      color: percentageChange >= 0
+                          ? AppColors.success
+                          : AppColors.error,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '$percentageChange%',
+                      '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}%',
                       style: AppTextStyles.bodySecondary.copyWith(
-                        color: AppColors.success,
+                        color: percentageChange >= 0
+                            ? AppColors.success
+                            : AppColors.error,
                         fontSize: 12,
                       ),
                     ),
